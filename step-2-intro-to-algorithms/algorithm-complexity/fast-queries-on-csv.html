@@ -467,6 +467,36 @@ summary {
 <pre><code>## 1303</code></pre>
 <p>Everything looks good here.</p>
 </div>
+<div id="find-a-laptop-from-an-id" class="section level1">
+<h1>Find a Laptop From an ID</h1>
+<p>Now that we have a basic class to represent our inventory, we can extend it. Let’s add a method to the <code>Inventory</code> class to that given an ID number, we can pull all the information about a particular laptop. At this stage we will just loop through the rows of the inventory until we find the laptop ID (or not). This is to get a working baseline which we can then improve upon. In a worst case scenario, this method will have to check every row in the inventory so the time complexity is <span class="math inline">\(O(R)\)</span> where <span class="math inline">\(R\)</span> is the number of rows.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">class</span> Inventory():</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">    </a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, csv_filename):</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">        <span class="cf">with</span> <span class="bu">open</span>(csv_filename) <span class="im">as</span> <span class="bu">file</span>:</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">            read_file <span class="op">=</span> <span class="bu">list</span>(csv.reader(<span class="bu">file</span>))</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">            <span class="co"># convert price to an integer</span></a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">            <span class="cf">for</span> row <span class="kw">in</span> read_file[<span class="dv">1</span>:]:</a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">                row[<span class="dv">12</span>] <span class="op">=</span> <span class="bu">int</span>(row[<span class="dv">12</span>])</a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">            </a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">            <span class="va">self</span>.header <span class="op">=</span> read_file[<span class="dv">0</span>]</a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">            <span class="va">self</span>.rows <span class="op">=</span> read_file[<span class="dv">1</span>:]</a>
+<a class="sourceLine" id="cb6-12" data-line-number="12">            </a>
+<a class="sourceLine" id="cb6-13" data-line-number="13">    <span class="kw">def</span> get_laptop_from_id(<span class="va">self</span>, laptop_id):</a>
+<a class="sourceLine" id="cb6-14" data-line-number="14">        </a>
+<a class="sourceLine" id="cb6-15" data-line-number="15">        <span class="cf">for</span> row <span class="kw">in</span> <span class="va">self</span>.rows:</a>
+<a class="sourceLine" id="cb6-16" data-line-number="16">            <span class="cf">if</span> row[<span class="dv">0</span>] <span class="op">==</span> laptop_id:</a>
+<a class="sourceLine" id="cb6-17" data-line-number="17">                <span class="cf">return</span> row</a>
+<a class="sourceLine" id="cb6-18" data-line-number="18">        <span class="cf">return</span> <span class="va">None</span></a>
+<a class="sourceLine" id="cb6-19" data-line-number="19">        </a>
+<a class="sourceLine" id="cb6-20" data-line-number="20"><span class="co"># try it out</span></a>
+<a class="sourceLine" id="cb6-21" data-line-number="21">inv <span class="op">=</span> Inventory(<span class="st">'laptops.csv'</span>)</a>
+<a class="sourceLine" id="cb6-22" data-line-number="22"><span class="bu">print</span>(inv.get_laptop_from_id(<span class="st">'3362737'</span>))</a></code></pre></div>
+<pre><code>## ['3362737', 'HP', '250 G6', 'Notebook', '15.6', 'Full HD 1920x1080', 'Intel Core i5 7200U 2.5GHz', '8GB', '256GB SSD', 'Intel HD Graphics 620', 'No OS', '1.86kg', 575]</code></pre>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="bu">print</span>(inv.get_laptop_from_id(<span class="st">'3362736'</span>))</a></code></pre></div>
+<pre><code>## None</code></pre>
+<p>So our new method works, even when we supply a laptop ID that doesn’t exist.</p>
+</div>
 
 
 

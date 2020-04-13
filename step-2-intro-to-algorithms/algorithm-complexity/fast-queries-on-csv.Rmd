@@ -62,7 +62,7 @@ We can then test the class by creating a new instance and checking that the
   header attribute is correct and the rows attribute has the correct number
   of rows.
 
-```{python}
+```{python basic-class}
 import csv
 
 class Inventory():
@@ -84,6 +84,49 @@ print(len(new_inventory.rows))
 ```
 
 Everything looks good here.
+
+
+# Find a Laptop From an ID
+
+Now that we have a basic class to represent our inventory, we can extend it.
+Let's add a method to the `Inventory` class to that given an ID number, we
+  can pull all the information about a particular laptop.
+At this stage we will just loop through the rows of the inventory until we find
+  the laptop ID (or not).
+This is to get a working baseline which we can then improve upon.
+In a worst case scenario, this method will have to check every row in the 
+  inventory so the time complexity is $O(R)$ where $R$ is the number of rows.
+
+```{python basic-class-with-id-lookup}
+class Inventory():
+    
+    def __init__(self, csv_filename):
+        with open(csv_filename) as file:
+            read_file = list(csv.reader(file))
+            # convert price to an integer
+            for row in read_file[1:]:
+                row[12] = int(row[12])
+            
+            self.header = read_file[0]
+            self.rows = read_file[1:]
+            
+    def get_laptop_from_id(self, laptop_id):
+        
+        for row in self.rows:
+            if row[0] == laptop_id:
+                return row
+        return None
+        
+# try it out
+inv = Inventory('laptops.csv')
+print(inv.get_laptop_from_id('3362737'))
+print(inv.get_laptop_from_id('3362736'))
+```
+
+So our new method works, even when we supply a laptop ID that doesn't exist.
+
+
+
 
 
 
