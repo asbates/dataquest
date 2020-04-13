@@ -1,0 +1,89 @@
+---
+title: "Building Fast Queries on a csv"
+author: "Andrew Bates"
+output: 
+  html_document:
+    highlight: pygments
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  engine.path = list(
+    python = "/Users/andrewbates/anaconda3/bin/python"
+  )
+  )
+```
+
+
+# Introduction
+
+This project applies topics learned in an introduction to algorithms course to
+  querying a csv file.
+The idea is that we are an online laptop retailer and we want to answer some
+  questions about our inventory.
+For example, identifying laptops that fit within a given budget.
+We start by creating a simple class to represent our inventory (the csv file) 
+  that holds basic information like the number of laptops in the inventory.
+From there, we build upon this class by adding methods to, for example, get
+  information about a particular laptop from it's ID number.
+We then improve on these methods by using what was learned in the course to
+  speed things up.
+
+# Data
+
+The data for this project is a modified version of the 
+  [Laptop Prices](https://www.kaggle.com/ionaskel/laptop-prices) data set on 
+  Kaggle.
+It contains price (obviously) in Euros, along with other information such as 
+  size and memory, for 1,300 laptops.
+Each laptop was given an ID number (e.g. 123456), instead of using the row 
+  number as supplied on Kaggle and the prices were rounded to whole numbers.
+
+```{python first-look, eval = FALSE}
+import csv
+
+with open('laptops.csv') as file:
+    read_file = list(csv.reader(file))
+    header = read_file[0]
+    rows = read_file[0:]
+    
+print(header)
+print(rows[1:6])
+```
+
+# A First Class
+
+We start with a simple class called `Inventory` that represents our inventory.
+Upon initialization, the `Inventory` class will read in the csv file (the
+  inventory), do a little pre-processing, and store some information about the 
+  file.
+We can then test the class by creating a new instance and checking that the
+  header attribute is correct and the rows attribute has the correct number
+  of rows.
+
+```{python}
+import csv
+
+class Inventory():
+    
+    def __init__(self, csv_filename):
+        with open(csv_filename) as file:
+            read_file = list(csv.reader(file))
+            # convert price to an integer
+            for row in read_file[1:]:
+                row[12] = int(row[12])
+            
+            self.header = read_file[0]
+            self.rows = read_file[1:]
+            
+# try it out
+new_inventory = Inventory('laptops.csv')
+print(new_inventory.header)
+print(len(new_inventory.rows))
+```
+
+Everything looks good here.
+
+
+
