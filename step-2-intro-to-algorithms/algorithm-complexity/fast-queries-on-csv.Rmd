@@ -64,6 +64,8 @@ We can then test the class by creating a new instance and checking that the
 
 ```{python basic-class}
 import csv
+import time  # for measuring performance (later)
+import random  # for measuring performance (later)
 
 class Inventory():
     
@@ -184,6 +186,45 @@ print(inv.get_laptop_from_id_fast('3362736'))
 ```
 
 Like before, our new method works both when an ID exists and when it does not.
+
+# Speed Comparison
+
+Now we compare the speed of the two methods to verify our fast method is indeed
+  faster.
+We do this by generating random IDs, using each method on all of the IDs, and
+  then seeing which method took longer to find the IDs.
+
+```{python speed-comparison}
+ids = [str(random.randint(100000, 9999999)) for _ in range(10001)]
+inv = Inventory('laptops.csv')
+
+# total time without using a dictionary (slow method)
+total_time_no_dict = 0
+for identifier in ids:
+    start = time.time()
+    inv.get_laptop_from_id(identifier)
+    end = time.time()
+    elapsed = end - start
+    total_time_no_dict += elapsed
+    
+# total time using a dictionary (fast method)
+total_time_dict = 0
+for identifier in ids:
+    start = time.time()
+    inv.get_laptop_from_id_fast(identifier)
+    end = time.time()
+    elapsed = end - start
+    total_time_dict += elapsed
+    
+print(total_time_no_dict)
+print(total_time_dict)
+print(total_time_no_dict / total_time_dict)
+```
+
+Using a dictionary was over 200 times faster!
+If we needed to locate laptops from IDs a lot, this is definitely the way to go.
+
+
 
 
 
