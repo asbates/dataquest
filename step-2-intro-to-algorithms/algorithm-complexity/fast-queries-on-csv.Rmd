@@ -126,7 +126,64 @@ print(inv.get_laptop_from_id('3362736'))
 So our new method works, even when we supply a laptop ID that doesn't exist.
 
 
+# Faster ID Lookup
 
+Let's improve on our `Inventory` class by speeding up the laptop lookup method.
+We will do this by adding a preprocessing step in the initialaztion method.
+We create a dictionary where the keys are the laptop ID and the values are
+  the corresponding row.
+This will make it slower to initialize the object and allocate more memory.
+But it will make finding a laptop faster because we can lookup an ID in a 
+  dictionary much faster than looping through all the rows.
+So the lookup method will be $O(1)$ instead of $O(R)$.
+We can imagine that in our business we could update our inventory once a day
+  and then users would be able to locate laptops for the rest of the day very
+  quickly.
+We sacrifice some speed and memory upfront in order to save a lot of speed later
+  on.
+
+Instead of modifying the existing `get_laptop_from_id()` method, we create a
+  new version, `get_laptop_from_id_fast()` so we can compare the performance
+  later.
+
+```{python faster-id-lookup}
+class Inventory():
+    
+    def __init__(self, csv_filename):
+        with open(csv_filename) as file:
+            read_file = list(csv.reader(file))
+            # convert price to an integer
+            for row in read_file[1:]:
+                row[12] = int(row[12])
+            
+            self.header = read_file[0]
+            self.rows = read_file[1:]
+            
+            # create a laptop lookup dictionary
+            self.id_to_row = {}
+            for row in self.rows:
+                self.id_to_row[row[0]] = row[1:]
+            
+    def get_laptop_from_id(self, laptop_id):
+        
+        for row in self.rows:
+            if row[0] == laptop_id:
+                return row
+        return None
+    
+    def get_laptop_from_id_fast(self, laptop_id):
+        
+        if laptop_id in self.id_to_row:
+            return self.id_to_row[laptop_id]
+        
+        return None
+
+inv = Inventory('laptops.csv')
+print(inv.get_laptop_from_id_fast('3362737'))
+print(inv.get_laptop_from_id_fast('3362736'))
+```
+
+Like before, our new method works both when an ID exists and when it does not.
 
 
 
