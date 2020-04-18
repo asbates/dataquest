@@ -406,6 +406,43 @@ Storing the prices has space complexity $O(n)$ and finding combinations of
   prices has time complexity $O(n)$.
 
 
+# Promotion Check Speed Comparison
+
+Like we did with the laptop lookup methods, let's compare the two methods we
+  made for checking promotion dollars.
+
+```{python}
+dollars = [random.randint(100, 5000) for _ in range(101)]
+
+inv = Inventory('laptops.csv')
+
+# total time without using a set (slow method)
+total_time_no_set = 0
+for dollar in dollars:
+    start = time.time()
+    res = inv.check_promotion_dollars(dollar)
+    end = time.time()
+    elapsed = end - start
+    total_time_no_set += elapsed
+    
+# total time using a set (fast method)
+total_time_set = 0
+for dollar in dollars:
+    start = time.time()
+    res = inv.check_promotion_dollars_fast(dollar)
+    end = time.time()
+    elapsed = end - start
+    total_time_set += elapsed
+    
+print(total_time_no_set)
+print(total_time_set)
+print(total_time_no_set / total_time_set)
+```
+
+This is a tremendous speed up!
+
+
+
 
 
 
