@@ -187,7 +187,7 @@ print(inv.get_laptop_from_id_fast('3362736'))  # ID doesn't exist
 
 Like before, our new method works both when an ID exists and when it does not.
 
-# Speed Comparison
+# ID Lookup Speed Comparison
 
 Now we compare the speed of the two methods to verify our fast method is indeed
   faster.
@@ -306,6 +306,104 @@ print(inv.check_promotion_dollars(442)) # should be False
 
 Great, our new method is working correctly.
 
+# Faster Promotion Check
+
+Now that we have a working method to check a gift card dollar amount for our
+  promotion, let's see if we can improve the performance.
+We can do this in a similar way as with the ID lookup method.
+By first finding and storing all the laptop prices so we don't have to loop
+  over all prices every time.
+With the ID lookup, we wanted to retrieve information about the laptop so we
+  used a dictionary to store the ID along with the other information.
+This time however, we are only interested in prices of a laptop so we can use
+  a set instead of a dictionary.
+
+```{python}
+class Inventory():
+    
+    def __init__(self, csv_filename):
+        with open(csv_filename) as file:
+            read_file = list(csv.reader(file))
+            # convert price to an integer
+            for row in read_file[1:]:
+                row[12] = int(row[12])
+            
+            self.header = read_file[0]
+            self.rows = read_file[1:]
+            
+            # create a laptop lookup dictionary
+            self.id_to_row = {}
+            for row in self.rows:
+                self.id_to_row[row[0]] = row[1:]
+                
+            # store laptop prices
+            self.prices = set()
+            for row in self.rows:
+                self.prices.add(row[12])
+            
+    def get_laptop_from_id(self, laptop_id):
+        
+        for row in self.rows:
+            if row[0] == laptop_id:
+                return row
+        return None
+    
+    def get_laptop_from_id_fast(self, laptop_id):
+        
+        if laptop_id in self.id_to_row:
+            return self.id_to_row[laptop_id]
+        
+        return None
+    
+    def check_promotion_dollars(self, dollars):
+        
+        for row in self.rows:
+            if row[12] == dollars:
+                return True
+            
+        for row1 in self.rows:
+            for row2 in self.rows:
+                if row1[12] + row2[12] == dollars:
+                    return True
+        
+        return False  # if dollars != price of 1 or 2 laptops
+    
+    def check_promotion_dollars_fast(self, dollars):
+        
+        if dollars in self.prices:
+            return True
+        
+        for price1 in self.prices:
+            price2 = dollars - price1
+            if price2 in self.prices:
+                return True
+        
+        return False
+
+inv = Inventory('laptops.csv')
+print(inv.check_promotion_dollars_fast(1000))  # should be True
+print(inv.check_promotion_dollars_fast(442))  # should be False
+```
+
+Everything seems to be working correctly.
+Notice that we did a bit of a trick to check if the total price of two laptops
+  matched the given dollar amount.
+The method is supposed to figure out if $price1 + price2 = dollars$.
+In other words, given a price $price1$, and a dollar amount $dollars$, the 
+  problem is to find $price2 = dollars - price1$.
+We just rearranged the equation a bit.
+
+The approach we took here was to store all the prices and then only loop 
+  through the prices set once, using the the equation.
+This finds a balance betwen time and space complexity.
+With the `check_promotion_dollars()` method we needed to loop through all the
+  prices twice so the time complexity was $O(n^2)$.
+Another way we could have solved this problem is to store all combinations
+  of prices and then have a constant time lookup.
+However, this would take up more memory, having space complexity $O(n^2)$.
+The technique used in `check_promotion_dollars_fast()` takes the middle ground.
+Storing the prices has space complexity $O(n)$ and finding combinations of
+  prices has time complexity $O(n)$.
 
 
 
