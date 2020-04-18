@@ -40,7 +40,7 @@ It contains price (obviously) in Euros, along with other information such as
 Each laptop was given an ID number (e.g. 123456), instead of using the row 
   number as supplied on Kaggle and the prices were rounded to whole numbers.
 
-```{python first-look, eval = FALSE}
+```{python first-look, eval = FALSE, echo = FALSE}
 import csv
 
 with open('laptops.csv') as file:
@@ -122,7 +122,7 @@ class Inventory():
 # try it out
 inv = Inventory('laptops.csv')
 print(inv.get_laptop_from_id('3362737'))
-print(inv.get_laptop_from_id('3362736'))
+print(inv.get_laptop_from_id('3362736'))  # ID doesn't exist
 ```
 
 So our new method works, even when we supply a laptop ID that doesn't exist.
@@ -182,7 +182,7 @@ class Inventory():
 
 inv = Inventory('laptops.csv')
 print(inv.get_laptop_from_id_fast('3362737'))
-print(inv.get_laptop_from_id_fast('3362736'))
+print(inv.get_laptop_from_id_fast('3362736'))  # ID doesn't exist
 ```
 
 Like before, our new method works both when an ID exists and when it does not.
@@ -223,6 +223,89 @@ print(total_time_no_dict / total_time_dict)
 
 Using a dictionary was over 200 times faster!
 If we needed to locate laptops from IDs a lot, this is definitely the way to go.
+
+
+# Laptop Promotion
+
+Now let's imagine our business is having a promotion.
+Some customers will receive special gift cards.
+These cards can be used to purchase up to two laptops, but they can only be 
+  used for a one time purchase.
+The giftcards will be loaded with a dollar amount depending on what is 
+  available in the inventory.
+We will make sure there is at least one way for the customer to spend the full
+  balance on the card.
+If there was no way to spend the full balance, customers might feel like they
+  are missing out since there will always be a balance, no matter what they
+  choose to buy.
+For example, if we issue gift cards valued at \$3,000 but the most a customer
+  can spend is \$2,500, they may feel they are losing the remaining \$500.
+So given the nominal value we want to load on the card, we may need to adjust
+  it depending on what is in the inventory.
+
+We implement this by adding a new method to our class called 
+  `check_promotion_dollars()` which will check to see if a given dollar amount
+  can be used.
+The easy case is when there is a laptop in our inventory that matches the
+  desired amount.
+If not, then we need to look at all pairs of prices.
+Like before, we will first write a working method and then work to improve
+  the performance.
+
+```{python laptop-promotion}
+
+class Inventory():
+    
+    def __init__(self, csv_filename):
+        with open(csv_filename) as file:
+            read_file = list(csv.reader(file))
+            # convert price to an integer
+            for row in read_file[1:]:
+                row[12] = int(row[12])
+            
+            self.header = read_file[0]
+            self.rows = read_file[1:]
+            
+            # create a laptop lookup dictionary
+            self.id_to_row = {}
+            for row in self.rows:
+                self.id_to_row[row[0]] = row[1:]
+            
+    def get_laptop_from_id(self, laptop_id):
+        
+        for row in self.rows:
+            if row[0] == laptop_id:
+                return row
+        return None
+    
+    def get_laptop_from_id_fast(self, laptop_id):
+        
+        if laptop_id in self.id_to_row:
+            return self.id_to_row[laptop_id]
+        
+        return None
+    
+    def check_promotion_dollars(self, dollars):
+        
+        for row in self.rows:
+            if row[12] == dollars:
+                return True
+            
+        for row1 in self.rows:
+            for row2 in self.rows:
+                if row1[12] + row2[12] == dollars:
+                    return True
+        
+        return False  # if dollars != price of 1 or 2 laptops
+    
+inv = Inventory('laptops.csv')
+print(inv.check_promotion_dollars(1000)) # should be True
+print(inv.check_promotion_dollars(442)) # should be False
+
+```
+
+Great, our new method is working correctly.
+
 
 
 
