@@ -1,0 +1,612 @@
+---
+title: "Building Fast Queries on a csv"
+author: "Andrew Bates"
+output: 
+  html_document:
+    highlight: pygments
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  engine.path = list(
+    python = "/Users/andrewbates/anaconda3/bin/python"
+  )
+  )
+```
+
+
+# Introduction
+
+This project applies topics learned in an introduction to algorithms course to
+  querying a csv file.
+The idea is that we are an online laptop retailer and we want to answer some
+  questions about our inventory.
+For example, identifying laptops that fit within a given budget.
+We start by creating a simple class to represent our inventory (the csv file) 
+  that holds basic information like the number of laptops in the inventory.
+From there, we build upon this class by adding methods to, for example, get
+  information about a particular laptop from it's ID number.
+We then improve on these methods by using what was learned in the course to
+  speed things up.
+
+# Data
+
+The data for this project is a modified version of the 
+  [Laptop Prices](https://www.kaggle.com/ionaskel/laptop-prices) data set on 
+  Kaggle.
+It contains price (obviously) in Euros, along with other information such as 
+  size and memory, for 1,300 laptops.
+Each laptop was given an ID number (e.g. 123456), instead of using the row 
+  number as supplied on Kaggle and the prices were rounded to whole numbers.
+
+```{python first-look, eval = FALSE, echo = FALSE}
+import csv
+
+with open('laptops.csv') as file:
+    read_file = list(csv.reader(file))
+    header = read_file[0]
+    rows = read_file[0:]
+    
+print(header)
+print(rows[1:6])
+```
+
+# A First Class
+
+We start with a simple class called `Inventory` that represents our inventory.
+Upon initialization, the `Inventory` class will read in the csv file (the
+  inventory), do a little pre-processing, and store some information about the 
+  file.
+We can then test the class by creating a new instance and checking that the
+  header attribute is correct and the rows attribute has the correct number
+  of rows.
+
+```{python basic-class}
+import csv
+import time  # for measuring performance (later)
+import random  # for measuring performance (later)
+
+class Inventory():
+    
+    def __init__(self, csv_filename):
+        with open(csv_filename) as file:
+            read_file = list(csv.reader(file))
+            # convert price to an integer
+            for row in read_file[1:]:
+                row[12] = int(row[12])
+            
+            self.header = read_file[0]
+            self.rows = read_file[1:]
+            
+# try it out
+new_inventory = Inventory('laptops.csv')
+print(new_inventory.header)
+print(len(new_inventory.rows))
+```
+
+Everything looks good here.
+
+
+# Find a Laptop From an ID
+
+Now that we have a basic class to represent our inventory, we can extend it.
+Let's add a method to the `Inventory` class to that given an ID number, we
+  can pull all the information about a particular laptop.
+At this stage we will just loop through the rows of the inventory until we find
+  the laptop ID (or not).
+This is to get a working baseline which we can then improve upon.
+In a worst case scenario, this method will have to check every row in the 
+  inventory so the time complexity is $O(R)$ where $R$ is the number of rows.
+
+```{python basic-class-with-id-lookup}
+class Inventory():
+    
+    def __init__(self, csv_filename):
+        with open(csv_filename) as file:
+            read_file = list(csv.reader(file))
+            # convert price to an integer
+            for row in read_file[1:]:
+                row[12] = int(row[12])
+            
+            self.header = read_file[0]
+            self.rows = read_file[1:]
+            
+    def get_laptop_from_id(self, laptop_id):
+        
+        for row in self.rows:
+            if row[0] == laptop_id:
+                return row
+        return None
+        
+# try it out
+inv = Inventory('laptops.csv')
+print(inv.get_laptop_from_id('3362737'))
+print(inv.get_laptop_from_id('3362736'))  # ID doesn't exist
+```
+
+So our new method works, even when we supply a laptop ID that doesn't exist.
+
+
+# Faster ID Lookup
+
+Let's improve on our `Inventory` class by speeding up the laptop lookup method.
+We will do this by adding a preprocessing step in the initialaztion method.
+We create a dictionary where the keys are the laptop ID and the values are
+  the corresponding row.
+This will make it slower to initialize the object and allocate more memory.
+But it will make finding a laptop faster because we can lookup an ID in a 
+  dictionary much faster than looping through all the rows.
+So the lookup method will be $O(1)$ instead of $O(R)$.
+We can imagine that in our business we could update our inventory once a day
+  and then users would be able to locate laptops for the rest of the day very
+  quickly.
+We sacrifice some speed and memory upfront in order to save a lot of speed later
+  on.
+
+Instead of modifying the existing `get_laptop_from_id()` method, we create a
+  new version, `get_laptop_from_id_fast()` so we can compare the performance
+  later.
+
+```{python faster-id-lookup}
+class Inventory():
+    
+    def __init__(self, csv_filename):
+        with open(csv_filename) as file:
+            read_file = list(csv.reader(file))
+            # convert price to an integer
+            for row in read_file[1:]:
+                row[12] = int(row[12])
+            
+            self.header = read_file[0]
+            self.rows = read_file[1:]
+            
+            # create a laptop lookup dictionary
+            self.id_to_row = {}
+            for row in self.rows:
+                self.id_to_row[row[0]] = row[1:]
+            
+    def get_laptop_from_id(self, laptop_id):
+        
+        for row in self.rows:
+            if row[0] == laptop_id:
+                return row
+        return None
+    
+    def get_laptop_from_id_fast(self, laptop_id):
+        
+        if laptop_id in self.id_to_row:
+            return self.id_to_row[laptop_id]
+        
+        return None
+
+inv = Inventory('laptops.csv')
+print(inv.get_laptop_from_id_fast('3362737'))
+print(inv.get_laptop_from_id_fast('3362736'))  # ID doesn't exist
+```
+
+Like before, our new method works both when an ID exists and when it does not.
+
+# ID Lookup Speed Comparison
+
+Now we compare the speed of the two methods to verify our fast method is indeed
+  faster.
+We do this by generating random IDs, using each method on all of the IDs, and
+  then seeing which method took longer to find the IDs.
+
+```{python speed-comparison}
+ids = [str(random.randint(100000, 9999999)) for _ in range(10001)]
+inv = Inventory('laptops.csv')
+
+# total time without using a dictionary (slow method)
+total_time_no_dict = 0
+for identifier in ids:
+    start = time.time()
+    inv.get_laptop_from_id(identifier)
+    end = time.time()
+    elapsed = end - start
+    total_time_no_dict += elapsed
+    
+# total time using a dictionary (fast method)
+total_time_dict = 0
+for identifier in ids:
+    start = time.time()
+    inv.get_laptop_from_id_fast(identifier)
+    end = time.time()
+    elapsed = end - start
+    total_time_dict += elapsed
+    
+print(total_time_no_dict)
+print(total_time_dict)
+print(total_time_no_dict / total_time_dict)
+```
+
+Using a dictionary was over 200 times faster!
+If we needed to locate laptops from IDs a lot, this is definitely the way to go.
+
+
+# Laptop Promotion
+
+Now let's imagine our business is having a promotion.
+Some customers will receive special gift cards.
+These cards can be used to purchase up to two laptops, but they can only be 
+  used for a one time purchase.
+The giftcards will be loaded with a dollar amount depending on what is 
+  available in the inventory.
+We will make sure there is at least one way for the customer to spend the full
+  balance on the card.
+If there was no way to spend the full balance, customers might feel like they
+  are missing out since there will always be a balance, no matter what they
+  choose to buy.
+For example, if we issue gift cards valued at \$3,000 but the most a customer
+  can spend is \$2,500, they may feel they are losing the remaining \$500.
+So given the nominal value we want to load on the card, we may need to adjust
+  it depending on what is in the inventory.
+
+We implement this by adding a new method to our class called 
+  `check_promotion_dollars()` which will check to see if a given dollar amount
+  can be used.
+The easy case is when there is a laptop in our inventory that matches the
+  desired amount.
+If not, then we need to look at all pairs of prices.
+Like before, we will first write a working method and then work to improve
+  the performance.
+
+```{python laptop-promotion}
+
+class Inventory():
+    
+    def __init__(self, csv_filename):
+        with open(csv_filename) as file:
+            read_file = list(csv.reader(file))
+            # convert price to an integer
+            for row in read_file[1:]:
+                row[12] = int(row[12])
+            
+            self.header = read_file[0]
+            self.rows = read_file[1:]
+            
+            # create a laptop lookup dictionary
+            self.id_to_row = {}
+            for row in self.rows:
+                self.id_to_row[row[0]] = row[1:]
+            
+    def get_laptop_from_id(self, laptop_id):
+        
+        for row in self.rows:
+            if row[0] == laptop_id:
+                return row
+        return None
+    
+    def get_laptop_from_id_fast(self, laptop_id):
+        
+        if laptop_id in self.id_to_row:
+            return self.id_to_row[laptop_id]
+        
+        return None
+    
+    def check_promotion_dollars(self, dollars):
+        
+        for row in self.rows:
+            if row[12] == dollars:
+                return True
+            
+        for row1 in self.rows:
+            for row2 in self.rows:
+                if row1[12] + row2[12] == dollars:
+                    return True
+        
+        return False  # if dollars != price of 1 or 2 laptops
+    
+inv = Inventory('laptops.csv')
+print(inv.check_promotion_dollars(1000)) # should be True
+print(inv.check_promotion_dollars(442)) # should be False
+
+```
+
+Great, our new method is working correctly.
+
+# Faster Promotion Check
+
+Now that we have a working method to check a gift card dollar amount for our
+  promotion, let's see if we can improve the performance.
+We can do this in a similar way as with the ID lookup method.
+By first finding and storing all the laptop prices so we don't have to loop
+  over all prices every time.
+With the ID lookup, we wanted to retrieve information about the laptop so we
+  used a dictionary to store the ID along with the other information.
+This time however, we are only interested in prices of a laptop so we can use
+  a set instead of a dictionary.
+
+```{python}
+class Inventory():
+    
+    def __init__(self, csv_filename):
+        with open(csv_filename) as file:
+            read_file = list(csv.reader(file))
+            # convert price to an integer
+            for row in read_file[1:]:
+                row[12] = int(row[12])
+            
+            self.header = read_file[0]
+            self.rows = read_file[1:]
+            
+            # create a laptop lookup dictionary
+            self.id_to_row = {}
+            for row in self.rows:
+                self.id_to_row[row[0]] = row[1:]
+                
+            # store laptop prices
+            self.prices = set()
+            for row in self.rows:
+                self.prices.add(row[12])
+            
+    def get_laptop_from_id(self, laptop_id):
+        
+        for row in self.rows:
+            if row[0] == laptop_id:
+                return row
+        return None
+    
+    def get_laptop_from_id_fast(self, laptop_id):
+        
+        if laptop_id in self.id_to_row:
+            return self.id_to_row[laptop_id]
+        
+        return None
+    
+    def check_promotion_dollars(self, dollars):
+        
+        for row in self.rows:
+            if row[12] == dollars:
+                return True
+            
+        for row1 in self.rows:
+            for row2 in self.rows:
+                if row1[12] + row2[12] == dollars:
+                    return True
+        
+        return False  # if dollars != price of 1 or 2 laptops
+    
+    def check_promotion_dollars_fast(self, dollars):
+        
+        if dollars in self.prices:
+            return True
+        
+        for price1 in self.prices:
+            price2 = dollars - price1
+            if price2 in self.prices:
+                return True
+        
+        return False
+
+inv = Inventory('laptops.csv')
+print(inv.check_promotion_dollars_fast(1000))  # should be True
+print(inv.check_promotion_dollars_fast(442))  # should be False
+```
+
+Everything seems to be working correctly.
+Notice that we did a bit of a trick to check if the total price of two laptops
+  matched the given dollar amount.
+The method is supposed to figure out if $price1 + price2 = dollars$.
+In other words, given a price $price1$, and a dollar amount $dollars$, the 
+  problem is to find $price2 = dollars - price1$.
+We just rearranged the equation a bit.
+
+The approach we took here was to store all the prices and then only loop 
+  through the prices set once, using the the equation.
+This finds a balance betwen time and space complexity.
+With the `check_promotion_dollars()` method we needed to loop through all the
+  prices twice so the time complexity was $O(n^2)$.
+Another way we could have solved this problem is to store all combinations
+  of prices and then have a constant time lookup.
+However, this would take up more memory, having space complexity $O(n^2)$.
+The technique used in `check_promotion_dollars_fast()` takes the middle ground.
+Storing the prices has space complexity $O(n)$ and finding combinations of
+  prices has time complexity $O(n)$.
+
+
+# Promotion Check Speed Comparison
+
+Like we did with the laptop lookup methods, let's compare the two methods we
+  made for checking promotion dollars.
+
+```{python}
+dollars = [random.randint(100, 5000) for _ in range(101)]
+
+inv = Inventory('laptops.csv')
+
+# total time without using a set (slow method)
+total_time_no_set = 0
+for dollar in dollars:
+    start = time.time()
+    res = inv.check_promotion_dollars(dollar)
+    end = time.time()
+    elapsed = end - start
+    total_time_no_set += elapsed
+    
+# total time using a set (fast method)
+total_time_set = 0
+for dollar in dollars:
+    start = time.time()
+    res = inv.check_promotion_dollars_fast(dollar)
+    end = time.time()
+    elapsed = end - start
+    total_time_set += elapsed
+    
+print(total_time_no_set)
+print(total_time_set)
+print(total_time_no_set / total_time_set)
+```
+
+This is a tremendous speed up!
+
+
+# Find Laptops Within a Budget
+
+The final extension to our `Inventory` class will be a method to find laptops
+  that fit within a budget.
+Given a price, it will return all laptops less than or equal to the price.
+This is actually a bit of an extension of the problem posed for this guided
+  project.
+The guide suggests having the method return the index of the laptop that is
+  just over the budget.
+In this way, we could get all laptops within the budget by selecting all indices
+  below the out of budget laptop index (if the list is sorted).
+I guess the idea is to leave it up to the user to do this second step.
+We also add functionality to handle the cases where the given budget is 
+  outside the range of laptop prices (too low or too high), which was not
+  mentioned in the problem statement.
+So we will have a method that will return the actual laptop information
+  rather than the index.
+More specifically, we will add a helper method to find the index we need, and
+  use that in the 'real' method that returns the laptop information.
+This makes the class more consistent because the `get_laptop_from_id` method
+  returns the laptop information and not an index.
+
+
+For the index helper method, we wil use a private method.
+Part of this is because I learned about private methods in Python as I
+  was working on this project.
+But I also think it makes sense because why would someone using this class
+  need the index if there is a method that returns the values.
+Sometimes that could be useful to have both methods public but I don't think
+  so in this case.
+
+OK, enough of the private method sidetrack, let's talk about how we will 
+  implement this.
+To start, we will ad another step to our intilization method to create and store
+  the data sorted by price.
+We can then use that in our index finding helper to find the laptop just 
+  outside the budget.
+We will use binary search to find the index.
+Finally, we use the index from our helper to return information about the
+  laptop.
+If the desired budget is outside the available laptop prices, we will return
+  all laptops or `None` depending on if the budget is higher than the most
+  expensive laptop or lower than the cheapest.
+Note that we also clean up the class a bit by removing the duplicate methods
+  from before, only keeping the `*_fast` methods and removing the `_fast` 
+  from the name.
+
+
+```{python laptops-within-budget}
+class Inventory():
+  
+    def __init__(self, csv_filename):
+        with open(csv_filename) as file:
+            read_file = list(csv.reader(file))
+            # convert price to an integer
+            for row in read_file[1:]:
+                row[12] = int(row[12])
+            
+            self.header = read_file[0]
+            self.rows = read_file[1:]
+            
+            # create a laptop lookup dictionary
+            self.id_to_row = {}
+            for row in self.rows:
+                self.id_to_row[row[0]] = row[1:]
+                
+            # store laptop prices
+            self.prices = set()
+            for row in self.rows:
+                self.prices.add(row[12])
+                
+            # laptops sorted by price
+            # need a helper function to return price index
+            #  since it's not the first in the list
+            def row_price(row):
+                return row[-1]
+            
+            self.rows_by_price = sorted(self.rows, key = row_price)
+            
+            # save max and min prices for get_laptops_under_price
+            self.min_price = self.rows_by_price[0][-1]
+            self.max_price = self.rows_by_price[-1][-1]
+    
+    def get_laptop_from_id(self, laptop_id):
+        
+        if laptop_id in self.id_to_row:
+            return self.id_to_row[laptop_id]
+        
+        return None
+    
+    def check_promotion_dollars(self, dollars):
+        
+        if dollars in self.prices:
+            return True
+        
+        for price1 in self.prices:
+            price2 = dollars - price1
+            if price2 in self.prices:
+                return True
+        
+        return False  # if dollars != price of 1 or 2 laptops
+    
+    def __get_first_laptop_more_expensive(self, target_price):
+        range_start = 0
+        range_end = len(self.rows_by_price) - 1
+        
+        while range_start < range_end:
+            
+            range_middle = (range_start + range_end) // 2
+            price = self.rows_by_price[range_middle][-1]
+            
+            if price > target_price:
+                range_end = range_middle
+            else:
+                range_start = range_middle + 1
+                
+        price = self.rows_by_price[range_start][-1]
+        
+        if price <= target_price:
+            return -1
+        return range_start
+    
+    def get_laptops_under_price(self, price):
+        
+        if price < self.min_price:
+            return None
+        elif price > self.max_price:
+            return self.rows_by_price
+        else:
+            just_over_index = self.__get_first_laptop_more_expensive(price)
+            # last value isn't included in slicing
+            return self.rows_by_price[0:just_over_index]
+
+# test it out
+inv = Inventory('laptops.csv')
+print(inv.get_laptops_under_price(195))
+print(inv.get_laptops_under_price(100))  # no laptops this cheap
+print(len(inv.get_laptops_under_price(10000)))  # every laptop is w/in budget
+```
+
+It works!
+Our new method successfully finds all laptops that fit within a given budget, 
+  in this case \$195 so not too much prints.
+It also knows the difference between a budget that is too low and a budget that
+  is enough for any laptop in the inventory.
+
+
+# Conclusion
+
+In this project we implemented a Python class to store and retrieve information
+  related to laptops.
+That is, we had an 'inventory' of laptops and wanted to be able to do things 
+  like get information about a particular laptop from an ID and get information
+  on laptops that are under a given budget.
+This was the culumination of my first formal introduction to algorithms course.
+This was also the first guided project I've done through
+  [Data Quest](https://github.com/asbates/dataquest.git).
+I have to say I was very satisfied overall.
+Not only did I get an introduction to a topic I only had a passing familiarity
+  with, but I had the chance to put it into practice.
+I especially like how the implementation was via a Python class because I 
+  had never written one before.
+So double learning!
+Now I'm even more curious about the projects for other courses.
+
+
+
+
