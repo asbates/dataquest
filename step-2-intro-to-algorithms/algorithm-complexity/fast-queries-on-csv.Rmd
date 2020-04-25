@@ -442,7 +442,151 @@ print(total_time_no_set / total_time_set)
 This is a tremendous speed up!
 
 
+# Find Laptops Within a Budget
 
+The final extension to our `Inventory` class will be a method to find laptops
+  that fit within a budget.
+Given a price, it will return all laptops less than or equal to the price.
+This is actually a bit of an extension of the problem posed for this guided
+  project.
+The guide suggests having the method return the index of the laptop that is
+  just over the budget.
+In this way, we could get all laptops within the budget by selecting all indices
+  below the out of budget laptop index (if the list is sorted).
+I guess the idea is to leave it up to the user to do this second step.
+We also add functionality to handle the cases where the given budget is 
+  outside the range of laptop prices (too low or too high), which was not
+  mentioned in the problem statement.
+So we will have a method that will return the actual laptop information
+  rather than the index.
+More specifically, we will add a helper method to find the index we need, and
+  use that in the 'real' method that returns the laptop information.
+This makes the class more consistent because the `get_laptop_from_id` method
+  returns the laptop information and not an index.
+
+
+For the index helper method, we wil use a private method.
+Part of this is because I learned about private methods in Python as I
+  was working on this project.
+But I also think it makes sense because why would someone using this class
+  need the index if there is a method that returns the values.
+Sometimes that could be useful to have both methods public but I don't think
+  so in this case.
+
+OK, enough of the private method sidetrack, let's talk about how we will 
+  implement this.
+To start, we will ad another step to our intilization method to create and store
+  the data sorted by price.
+We can then use that in our index finding helper to find the laptop just 
+  outside the budget.
+We will use binary search to find the index.
+Finally, we use the index from our helper to return information about the
+  laptop.
+If the desired budget is outside the available laptop prices, we will return
+  all laptops or `None` depending on if the budget is higher than the most
+  expensive laptop or lower than the cheapest.
+Note that we also clean up the class a bit by removing the duplicate methods
+  from before, only keeping the `*_fast` methods and removing the `_fast` 
+  from the name.
+
+
+```{python laptops-within-budget}
+class Inventory():
+  
+    def __init__(self, csv_filename):
+        with open(csv_filename) as file:
+            read_file = list(csv.reader(file))
+            # convert price to an integer
+            for row in read_file[1:]:
+                row[12] = int(row[12])
+            
+            self.header = read_file[0]
+            self.rows = read_file[1:]
+            
+            # create a laptop lookup dictionary
+            self.id_to_row = {}
+            for row in self.rows:
+                self.id_to_row[row[0]] = row[1:]
+                
+            # store laptop prices
+            self.prices = set()
+            for row in self.rows:
+                self.prices.add(row[12])
+                
+            # laptops sorted by price
+            # need a helper function to return price index
+            #  since it's not the first in the list
+            def row_price(row):
+                return row[-1]
+            
+            self.rows_by_price = sorted(self.rows, key = row_price)
+            
+            # save max and min prices for get_laptops_under_price
+            self.min_price = self.rows_by_price[0][-1]
+            self.max_price = self.rows_by_price[-1][-1]
+    
+    def get_laptop_from_id(self, laptop_id):
+        
+        if laptop_id in self.id_to_row:
+            return self.id_to_row[laptop_id]
+        
+        return None
+    
+    def check_promotion_dollars(self, dollars):
+        
+        if dollars in self.prices:
+            return True
+        
+        for price1 in self.prices:
+            price2 = dollars - price1
+            if price2 in self.prices:
+                return True
+        
+        return False  # if dollars != price of 1 or 2 laptops
+    
+    def __get_first_laptop_more_expensive(self, target_price):
+        range_start = 0
+        range_end = len(self.rows_by_price) - 1
+        
+        while range_start < range_end:
+            
+            range_middle = (range_start + range_end) // 2
+            price = self.rows_by_price[range_middle][-1]
+            
+            if price > target_price:
+                range_end = range_middle
+            else:
+                range_start = range_middle + 1
+                
+        price = self.rows_by_price[range_start][-1]
+        
+        if price <= target_price:
+            return -1
+        return range_start
+    
+    def get_laptops_under_price(self, price):
+        
+        if price < self.min_price:
+            return None
+        elif price > self.max_price:
+            return self.rows_by_price
+        else:
+            just_over_index = self.__get_first_laptop_more_expensive(price)
+            # last value isn't included in slicing
+            return self.rows_by_price[0:just_over_index]
+
+# test it out
+inv = Inventory('laptops.csv')
+print(inv.get_laptops_under_price(195))
+print(inv.get_laptops_under_price(100))  # no laptops this cheap
+print(len(inv.get_laptops_under_price(10000)))  # every laptop is w/in budget
+```
+
+It works!
+Our new method successfully finds all laptops that fit within a given budget, 
+  in this case \$195 so not too much prints.
+It also knows the difference between a budget that is too low and a budget that
+  is enough for any laptop in the inventory.
 
 
 

@@ -548,7 +548,7 @@ summary {
 <a class="sourceLine" id="cb13-11" data-line-number="11">    total_time_no_dict <span class="op">+=</span> elapsed</a>
 <a class="sourceLine" id="cb13-12" data-line-number="12">    </a>
 <a class="sourceLine" id="cb13-13" data-line-number="13"><span class="co"># total time using a dictionary (fast method)</span></a></code></pre></div>
-<pre><code>## ['6676297', 'HP', 'EliteBook 840', 'Notebook', '14', 'Full HD 1920x1080', 'Intel Core i5 6200U 2.3GHz', '4GB', '500GB HDD', 'Intel HD Graphics 520', 'Windows 10', '1.54kg', 1000]</code></pre>
+<pre><code>## ['4882525', 'Asus', 'G752VY-GC162T (i7-6700HQ/16GB/1TB', 'Gaming', '17.3', 'IPS Panel Full HD 1920x1080', 'Intel Core i7 6700HQ 2.6GHz', '16GB', '128GB SSD +  1TB HDD', 'Nvidia GeForce GTX 980M', 'Windows 10', '4.3kg', 2299]</code></pre>
 <div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb15-1" data-line-number="1">total_time_dict <span class="op">=</span> <span class="dv">0</span></a>
 <a class="sourceLine" id="cb15-2" data-line-number="2"><span class="cf">for</span> identifier <span class="kw">in</span> ids:</a>
 <a class="sourceLine" id="cb15-3" data-line-number="3">    start <span class="op">=</span> time.time()</a>
@@ -557,13 +557,13 @@ summary {
 <a class="sourceLine" id="cb15-6" data-line-number="6">    elapsed <span class="op">=</span> end <span class="op">-</span> start</a>
 <a class="sourceLine" id="cb15-7" data-line-number="7">    total_time_dict <span class="op">+=</span> elapsed</a>
 <a class="sourceLine" id="cb15-8" data-line-number="8">    </a></code></pre></div>
-<pre><code>## ['HP', 'EliteBook 840', 'Notebook', '14', 'Full HD 1920x1080', 'Intel Core i5 6200U 2.3GHz', '4GB', '500GB HDD', 'Intel HD Graphics 520', 'Windows 10', '1.54kg', 1000]</code></pre>
+<pre><code>## ['Asus', 'G752VY-GC162T (i7-6700HQ/16GB/1TB', 'Gaming', '17.3', 'IPS Panel Full HD 1920x1080', 'Intel Core i7 6700HQ 2.6GHz', '16GB', '128GB SSD +  1TB HDD', 'Nvidia GeForce GTX 980M', 'Windows 10', '4.3kg', 2299]</code></pre>
 <div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="bu">print</span>(total_time_no_dict)</a></code></pre></div>
-<pre><code>## 1.0968174934387207</code></pre>
+<pre><code>## 1.1224632263183594</code></pre>
 <div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="bu">print</span>(total_time_dict)</a></code></pre></div>
-<pre><code>## 0.00516200065612793</code></pre>
+<pre><code>## 0.005933046340942383</code></pre>
 <div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="bu">print</span>(total_time_no_dict <span class="op">/</span> total_time_dict)</a></code></pre></div>
-<pre><code>## 212.47914645974782</code></pre>
+<pre><code>## 189.1883463934097</code></pre>
 <p>Using a dictionary was over 200 times faster! If we needed to locate laptops from IDs a lot, this is definitely the way to go.</p>
 </div>
 <div id="laptop-promotion" class="section level1">
@@ -720,12 +720,111 @@ summary {
 <a class="sourceLine" id="cb31-21" data-line-number="21">    total_time_set <span class="op">+=</span> elapsed</a>
 <a class="sourceLine" id="cb31-22" data-line-number="22">    </a>
 <a class="sourceLine" id="cb31-23" data-line-number="23"><span class="bu">print</span>(total_time_no_set)</a></code></pre></div>
-<pre><code>## 1.733013391494751</code></pre>
+<pre><code>## 2.1574008464813232</code></pre>
 <div class="sourceCode" id="cb33"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="bu">print</span>(total_time_set)</a></code></pre></div>
-<pre><code>## 0.0008716583251953125</code></pre>
+<pre><code>## 0.0010101795196533203</code></pre>
 <div class="sourceCode" id="cb35"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb35-1" data-line-number="1"><span class="bu">print</span>(total_time_no_set <span class="op">/</span> total_time_set)</a></code></pre></div>
-<pre><code>## 1988.179704595186</code></pre>
+<pre><code>## 2135.6608449374557</code></pre>
 <p>This is a tremendous speed up!</p>
+</div>
+<div id="find-laptops-within-a-budget" class="section level1">
+<h1>Find Laptops Within a Budget</h1>
+<p>The final extension to our <code>Inventory</code> class will be a method to find laptops that fit within a budget. Given a price, it will return all laptops less than or equal to the price. This is actually a bit of an extension of the problem posed for this guided project. The guide suggests having the method return the index of the laptop that is just over the budget. In this way, we could get all laptops within the budget by selecting all indices below the out of budget laptop index (if the list is sorted). I guess the idea is to leave it up to the user to do this second step. We also add functionality to handle the cases where the given budget is outside the range of laptop prices (too low or too high), which was not mentioned in the problem statement. So we will have a method that will return the actual laptop information rather than the index. More specifically, we will add a helper method to find the index we need, and use that in the ‘real’ method that returns the laptop information. This makes the class more consistent because the <code>get_laptop_from_id</code> method returns the laptop information and not an index.</p>
+<p>For the index helper method, we wil use a private method. Part of this is because I learned about private methods in Python as I was working on this project. But I also think it makes sense because why would someone using this class need the index if there is a method that returns the values. Sometimes that could be useful to have both methods public but I don’t think so in this case.</p>
+<p>OK, enough of the private method sidetrack, let’s talk about how we will implement this. To start, we will ad another step to our intilization method to create and store the data sorted by price. We can then use that in our index finding helper to find the laptop just outside the budget. We will use binary search to find the index. Finally, we use the index from our helper to return information about the laptop. If the desired budget is outside the available laptop prices, we will return all laptops or <code>None</code> depending on if the budget is higher than the most expensive laptop or lower than the cheapest. Note that we also clean up the class a bit by removing the duplicate methods from before, only keeping the <code>*_fast</code> methods and removing the <code>_fast</code> from the name.</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="kw">class</span> Inventory():</a>
+<a class="sourceLine" id="cb37-2" data-line-number="2">  </a>
+<a class="sourceLine" id="cb37-3" data-line-number="3">    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, csv_filename):</a>
+<a class="sourceLine" id="cb37-4" data-line-number="4">        <span class="cf">with</span> <span class="bu">open</span>(csv_filename) <span class="im">as</span> <span class="bu">file</span>:</a>
+<a class="sourceLine" id="cb37-5" data-line-number="5">            read_file <span class="op">=</span> <span class="bu">list</span>(csv.reader(<span class="bu">file</span>))</a>
+<a class="sourceLine" id="cb37-6" data-line-number="6">            <span class="co"># convert price to an integer</span></a>
+<a class="sourceLine" id="cb37-7" data-line-number="7">            <span class="cf">for</span> row <span class="kw">in</span> read_file[<span class="dv">1</span>:]:</a>
+<a class="sourceLine" id="cb37-8" data-line-number="8">                row[<span class="dv">12</span>] <span class="op">=</span> <span class="bu">int</span>(row[<span class="dv">12</span>])</a>
+<a class="sourceLine" id="cb37-9" data-line-number="9">            </a>
+<a class="sourceLine" id="cb37-10" data-line-number="10">            <span class="va">self</span>.header <span class="op">=</span> read_file[<span class="dv">0</span>]</a>
+<a class="sourceLine" id="cb37-11" data-line-number="11">            <span class="va">self</span>.rows <span class="op">=</span> read_file[<span class="dv">1</span>:]</a>
+<a class="sourceLine" id="cb37-12" data-line-number="12">            </a>
+<a class="sourceLine" id="cb37-13" data-line-number="13">            <span class="co"># create a laptop lookup dictionary</span></a>
+<a class="sourceLine" id="cb37-14" data-line-number="14">            <span class="va">self</span>.id_to_row <span class="op">=</span> {}</a>
+<a class="sourceLine" id="cb37-15" data-line-number="15">            <span class="cf">for</span> row <span class="kw">in</span> <span class="va">self</span>.rows:</a>
+<a class="sourceLine" id="cb37-16" data-line-number="16">                <span class="va">self</span>.id_to_row[row[<span class="dv">0</span>]] <span class="op">=</span> row[<span class="dv">1</span>:]</a>
+<a class="sourceLine" id="cb37-17" data-line-number="17">                </a>
+<a class="sourceLine" id="cb37-18" data-line-number="18">            <span class="co"># store laptop prices</span></a>
+<a class="sourceLine" id="cb37-19" data-line-number="19">            <span class="va">self</span>.prices <span class="op">=</span> <span class="bu">set</span>()</a>
+<a class="sourceLine" id="cb37-20" data-line-number="20">            <span class="cf">for</span> row <span class="kw">in</span> <span class="va">self</span>.rows:</a>
+<a class="sourceLine" id="cb37-21" data-line-number="21">                <span class="va">self</span>.prices.add(row[<span class="dv">12</span>])</a>
+<a class="sourceLine" id="cb37-22" data-line-number="22">                </a>
+<a class="sourceLine" id="cb37-23" data-line-number="23">            <span class="co"># laptops sorted by price</span></a>
+<a class="sourceLine" id="cb37-24" data-line-number="24">            <span class="co"># need a helper function to return price index</span></a>
+<a class="sourceLine" id="cb37-25" data-line-number="25">            <span class="co">#  since it's not the first in the list</span></a>
+<a class="sourceLine" id="cb37-26" data-line-number="26">            <span class="kw">def</span> row_price(row):</a>
+<a class="sourceLine" id="cb37-27" data-line-number="27">                <span class="cf">return</span> row[<span class="op">-</span><span class="dv">1</span>]</a>
+<a class="sourceLine" id="cb37-28" data-line-number="28">            </a>
+<a class="sourceLine" id="cb37-29" data-line-number="29">            <span class="va">self</span>.rows_by_price <span class="op">=</span> <span class="bu">sorted</span>(<span class="va">self</span>.rows, key <span class="op">=</span> row_price)</a>
+<a class="sourceLine" id="cb37-30" data-line-number="30">            </a>
+<a class="sourceLine" id="cb37-31" data-line-number="31">            <span class="co"># save max and min prices for get_laptops_under_price</span></a>
+<a class="sourceLine" id="cb37-32" data-line-number="32">            <span class="va">self</span>.min_price <span class="op">=</span> <span class="va">self</span>.rows_by_price[<span class="dv">0</span>][<span class="op">-</span><span class="dv">1</span>]</a>
+<a class="sourceLine" id="cb37-33" data-line-number="33">            <span class="va">self</span>.max_price <span class="op">=</span> <span class="va">self</span>.rows_by_price[<span class="op">-</span><span class="dv">1</span>][<span class="op">-</span><span class="dv">1</span>]</a>
+<a class="sourceLine" id="cb37-34" data-line-number="34">    </a>
+<a class="sourceLine" id="cb37-35" data-line-number="35">    <span class="kw">def</span> get_laptop_from_id(<span class="va">self</span>, laptop_id):</a>
+<a class="sourceLine" id="cb37-36" data-line-number="36">        </a>
+<a class="sourceLine" id="cb37-37" data-line-number="37">        <span class="cf">if</span> laptop_id <span class="kw">in</span> <span class="va">self</span>.id_to_row:</a>
+<a class="sourceLine" id="cb37-38" data-line-number="38">            <span class="cf">return</span> <span class="va">self</span>.id_to_row[laptop_id]</a>
+<a class="sourceLine" id="cb37-39" data-line-number="39">        </a>
+<a class="sourceLine" id="cb37-40" data-line-number="40">        <span class="cf">return</span> <span class="va">None</span></a>
+<a class="sourceLine" id="cb37-41" data-line-number="41">    </a>
+<a class="sourceLine" id="cb37-42" data-line-number="42">    <span class="kw">def</span> check_promotion_dollars(<span class="va">self</span>, dollars):</a>
+<a class="sourceLine" id="cb37-43" data-line-number="43">        </a>
+<a class="sourceLine" id="cb37-44" data-line-number="44">        <span class="cf">if</span> dollars <span class="kw">in</span> <span class="va">self</span>.prices:</a>
+<a class="sourceLine" id="cb37-45" data-line-number="45">            <span class="cf">return</span> <span class="va">True</span></a>
+<a class="sourceLine" id="cb37-46" data-line-number="46">        </a>
+<a class="sourceLine" id="cb37-47" data-line-number="47">        <span class="cf">for</span> price1 <span class="kw">in</span> <span class="va">self</span>.prices:</a>
+<a class="sourceLine" id="cb37-48" data-line-number="48">            price2 <span class="op">=</span> dollars <span class="op">-</span> price1</a>
+<a class="sourceLine" id="cb37-49" data-line-number="49">            <span class="cf">if</span> price2 <span class="kw">in</span> <span class="va">self</span>.prices:</a>
+<a class="sourceLine" id="cb37-50" data-line-number="50">                <span class="cf">return</span> <span class="va">True</span></a>
+<a class="sourceLine" id="cb37-51" data-line-number="51">        </a>
+<a class="sourceLine" id="cb37-52" data-line-number="52">        <span class="cf">return</span> <span class="va">False</span>  <span class="co"># if dollars != price of 1 or 2 laptops</span></a>
+<a class="sourceLine" id="cb37-53" data-line-number="53">    </a>
+<a class="sourceLine" id="cb37-54" data-line-number="54">    <span class="kw">def</span> __get_first_laptop_more_expensive(<span class="va">self</span>, target_price):</a>
+<a class="sourceLine" id="cb37-55" data-line-number="55">        range_start <span class="op">=</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb37-56" data-line-number="56">        range_end <span class="op">=</span> <span class="bu">len</span>(<span class="va">self</span>.rows_by_price) <span class="op">-</span> <span class="dv">1</span></a>
+<a class="sourceLine" id="cb37-57" data-line-number="57">        </a>
+<a class="sourceLine" id="cb37-58" data-line-number="58">        <span class="cf">while</span> range_start <span class="op">&lt;</span> range_end:</a>
+<a class="sourceLine" id="cb37-59" data-line-number="59">            </a>
+<a class="sourceLine" id="cb37-60" data-line-number="60">            range_middle <span class="op">=</span> (range_start <span class="op">+</span> range_end) <span class="op">//</span> <span class="dv">2</span></a>
+<a class="sourceLine" id="cb37-61" data-line-number="61">            price <span class="op">=</span> <span class="va">self</span>.rows_by_price[range_middle][<span class="op">-</span><span class="dv">1</span>]</a>
+<a class="sourceLine" id="cb37-62" data-line-number="62">            </a>
+<a class="sourceLine" id="cb37-63" data-line-number="63">            <span class="cf">if</span> price <span class="op">&gt;</span> target_price:</a>
+<a class="sourceLine" id="cb37-64" data-line-number="64">                range_end <span class="op">=</span> range_middle</a>
+<a class="sourceLine" id="cb37-65" data-line-number="65">            <span class="cf">else</span>:</a>
+<a class="sourceLine" id="cb37-66" data-line-number="66">                range_start <span class="op">=</span> range_middle <span class="op">+</span> <span class="dv">1</span></a>
+<a class="sourceLine" id="cb37-67" data-line-number="67">                </a>
+<a class="sourceLine" id="cb37-68" data-line-number="68">        price <span class="op">=</span> <span class="va">self</span>.rows_by_price[range_start][<span class="op">-</span><span class="dv">1</span>]</a>
+<a class="sourceLine" id="cb37-69" data-line-number="69">        </a>
+<a class="sourceLine" id="cb37-70" data-line-number="70">        <span class="cf">if</span> price <span class="op">&lt;=</span> target_price:</a>
+<a class="sourceLine" id="cb37-71" data-line-number="71">            <span class="cf">return</span> <span class="dv">-1</span></a>
+<a class="sourceLine" id="cb37-72" data-line-number="72">        <span class="cf">return</span> range_start</a>
+<a class="sourceLine" id="cb37-73" data-line-number="73">    </a>
+<a class="sourceLine" id="cb37-74" data-line-number="74">    <span class="kw">def</span> get_laptops_under_price(<span class="va">self</span>, price):</a>
+<a class="sourceLine" id="cb37-75" data-line-number="75">        </a>
+<a class="sourceLine" id="cb37-76" data-line-number="76">        <span class="cf">if</span> price <span class="op">&lt;</span> <span class="va">self</span>.min_price:</a>
+<a class="sourceLine" id="cb37-77" data-line-number="77">            <span class="cf">return</span> <span class="va">None</span></a>
+<a class="sourceLine" id="cb37-78" data-line-number="78">        <span class="cf">elif</span> price <span class="op">&gt;</span> <span class="va">self</span>.max_price:</a>
+<a class="sourceLine" id="cb37-79" data-line-number="79">            <span class="cf">return</span> <span class="va">self</span>.rows_by_price</a>
+<a class="sourceLine" id="cb37-80" data-line-number="80">        <span class="cf">else</span>:</a>
+<a class="sourceLine" id="cb37-81" data-line-number="81">            just_over_index <span class="op">=</span> <span class="va">self</span>.__get_first_laptop_more_expensive(price)</a>
+<a class="sourceLine" id="cb37-82" data-line-number="82">            <span class="co"># last value isn't included in slicing</span></a>
+<a class="sourceLine" id="cb37-83" data-line-number="83">            <span class="cf">return</span> <span class="va">self</span>.rows_by_price[<span class="dv">0</span>:just_over_index]</a>
+<a class="sourceLine" id="cb37-84" data-line-number="84"></a>
+<a class="sourceLine" id="cb37-85" data-line-number="85"><span class="co"># test it out</span></a>
+<a class="sourceLine" id="cb37-86" data-line-number="86">inv <span class="op">=</span> Inventory(<span class="st">'laptops.csv'</span>)</a>
+<a class="sourceLine" id="cb37-87" data-line-number="87"><span class="bu">print</span>(inv.get_laptops_under_price(<span class="dv">195</span>))</a></code></pre></div>
+<pre><code>## [['3564228', 'Acer', 'C740-C9QX (3205U/2GB/32GB/Chrome', 'Netbook', '11.6', '1366x768', 'Intel Celeron Dual Core 3205U 1.5GHz', '2GB', '32GB SSD', 'Intel HD Graphics', 'Chrome OS', '1.3kg', 174], ['7667029', 'Asus', 'Vivobook E200HA', 'Netbook', '11.6', '1366x768', 'Intel Atom x5-Z8350 1.44GHz', '2GB', '32GB Flash Storage', 'Intel HD Graphics 400', 'Windows 10', '0.98kg', 191]]</code></pre>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="bu">print</span>(inv.get_laptops_under_price(<span class="dv">100</span>))  <span class="co"># no laptops this cheap</span></a></code></pre></div>
+<pre><code>## None</code></pre>
+<div class="sourceCode" id="cb41"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="bu">print</span>(<span class="bu">len</span>(inv.get_laptops_under_price(<span class="dv">10000</span>)))  <span class="co"># every laptop is w/in budget</span></a></code></pre></div>
+<pre><code>## 1303</code></pre>
+<p>It works! Our new method successfully finds all laptops that fit within a given budget, in this case $195 so not too much prints. It also knows the difference between a budget that is too low and a budget that is enough for any laptop in the inventory.</p>
 </div>
 
 
