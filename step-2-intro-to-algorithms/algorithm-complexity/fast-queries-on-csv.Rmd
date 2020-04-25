@@ -589,4 +589,24 @@ It also knows the difference between a budget that is too low and a budget that
   is enough for any laptop in the inventory.
 
 
+# Conclusion
+
+In this project we implemented a Python class to store and retrieve information
+  related to laptops.
+That is, we had an 'inventory' of laptops and wanted to be able to do things 
+  like get information about a particular laptop from an ID and get information
+  on laptops that are under a given budget.
+This was the culumination of my first formal introduction to algorithms course.
+This was also the first guided project I've done through
+  [Data Quest](https://github.com/asbates/dataquest.git).
+I have to say I was very satisfied overall.
+Not only did I get an introduction to a topic I only had a passing familiarity
+  with, but I had the chance to put it into practice.
+I especially like how the implementation was via a Python class because I 
+  had never written one before.
+So double learning!
+Now I'm even more curious about the projects for other courses.
+
+
+
 
